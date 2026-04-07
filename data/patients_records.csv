@@ -1,0 +1,86 @@
+patient_id,patient_name,patient_number,patient_age,doctor_id,doctor_name,bp,sugar,medicine
+,Sneha,,-11,,,-28,-22,
+1,Meena,-409,28,,Dr. Singh,-24,-16,Paracetamol
+2,Kiran,7015080094,-9,1,Dr. Reddy,,,Insulin
+,Kiran,,-16,,Dr. Sharma,,136,Insulin
+4,Divya,8178694858,,,Dr. Kumar,120,-29,
+,Meena,1892577077,,,Dr. Singh,-30,,Aspirin
+,,,-18,,Dr. Reddy,,-40,Paracetamol
+,Rahul,-98,,,Dr. Singh,-9,-45,Insulin
+8,Meena,5972252432,72,7,Dr. Kumar,,-8,Aspirin
+9,Vikram,-947,,,Dr. Singh,122,,Aspirin
+,Pooja,,,4,Dr. Singh,-32,,Aspirin
+9,Asha,,-1,3,,-44,143,
+12,Meena,8633925688,,,Dr. Kumar,,,
+,Ravi,-232,-13,1,,-29,127,Aspirin
+,Meena,,,,Dr. Kumar,,-27,Aspirin
+15,Divya,-789,-10,3,Dr. Sharma,152,-50,
+9,Pooja,-264,,5,Dr. Sharma,-49,-1,Aspirin
+46,Meena,,,8,,,,Aspirin
+18,Divya,-148,86,,Dr. Reddy,-1,,Insulin
+,Asha,1319697426,,2,Dr. Singh,,,
+20,Vikram,-298,97,2,Dr. Singh,133,,Paracetamol
+21,Vikram,7865879550,-10,3,Dr. Iyer,-47,-10,Paracetamol
+22,Divya,,,,Dr. Sharma,-26,,Aspirin
+35,Ravi,-470,-10,6,Dr. Sharma,93,120,Paracetamol
+0,Sneha,-91,,2,Dr. Kumar,-26,,Insulin
+-8,Rahul,6311570171,-20,2,,,154,
+3,Pooja,9077910446,,,Dr. Kumar,114,,Insulin
+29,Rahul,,32,7,Dr. Iyer,87,162,Paracetamol
+28,Vikram,,92,,Dr. Singh,122,125,
+,Kiran,6828733435,,,Dr. Kumar,,,Insulin
+6,Vikram,-221,,7,Dr. Reddy,175,123,Paracetamol
+31,Sneha,3441110052,-14,,Dr. Reddy,112,,Insulin
+,Rahul,-833,82,7,Dr. Kumar,-19,,Insulin
+,Arjun,,-2,,,-5,,Insulin
+90,Kiran,-492,-4,,Dr. Reddy,145,-50,
+44,Meena,3085773677,-11,1,,88,-38,Paracetamol
+-1,Arjun,-790,42,1,Dr. Singh,,170,Aspirin
+47,Divya,,,10,Dr. Iyer,,,Paracetamol
+38,Asha,,-19,,Dr. Reddy,-45,-48,Insulin
+39,Divya,5253490815,-7,,Dr. Reddy,,200,Insulin
+50,Vikram,9745934686,-17,,Dr. Reddy,,175,Insulin
+41,Kiran,,,,Dr. Sharma,170,-40,Insulin
+,Vikram,-294,52,1,Dr. Singh,,-4,Aspirin
+63,Pooja,6603404626,63,,Dr. Reddy,-43,,
+,Meena,3456245149,-13,7,Dr. Kumar,-18,167,Paracetamol
+80,Pooja,-196,-17,,,-14,166,Insulin
+46,,9235374823,-16,,Dr. Sharma,,-35,Paracetamol
+,Rahul,7755234220,94,3,Dr. Sharma,,,Aspirin
+48,Sneha,-112,,5,Dr. Sharma,-17,-8,Aspirin
+58,Asha,2901061045,,,Dr. Sharma,110,,Paracetamol
+-7,Rahul,,,,Dr. Singh,-15,89,Paracetamol
+90,Ravi,,-6,,Dr. Iyer,106,-20,Insulin
+,Pooja,,,10,Dr. Sharma,138,,Aspirin
+,Divya,4495882568,-17,5,Dr. Iyer,-28,-1,
+75,Asha,2285324187,6,10,Dr. Iyer,-49,,Aspirin
+61,Meena,,,6,Dr. Iyer,158,-3,Insulin
+56,,,,,,,,
+57,,1397182898,,6,,102,-1,Aspirin
+,,-595,97,,Dr. Sharma,140,161,
+59,Arjun,,,,Dr. Reddy,87,127,Aspirin
+60,Divya,,,,Dr. Sharma,,148,Insulin
+34,,-895,74,4,Dr. Iyer,,147,Insulin
+62,Kiran,,-8,,,,137,Insulin
+,Arjun,,69,,Dr. Iyer,91,,Aspirin
+,Asha,-283,,,Dr. Iyer,,-41,Paracetamol
+,,,,,Dr. Reddy,-34,-49,
+60,Vikram,-110,-7,5,Dr. Iyer,,-33,Insulin
+,Rahul,-692,23,,Dr. Sharma,,-19,Paracetamol
+68,Asha,-309,32,4,,,143,Paracetamol
+21,Kiran,-771,,9,Dr. Iyer,,-14,Aspirin
+70,Ravi,,-13,3,Dr. Sharma,119,-5,
+71,Asha,,-19,9,Dr. Reddy,-45,,Aspirin
+,Ravi,-114,-9,,Dr. Iyer,,-19,
+,Divya,6029574959,-8,10,Dr. Singh,140,-41,Paracetamol
+29,Pooja,,-8,,Dr. Singh,-13,85,Paracetamol
+,Divya,-457,37,,Dr. Reddy,,-40,Aspirin
+,,-940,97,,,-35,,Insulin
+,Sneha,-79,,,Dr. Iyer,,-4,
+8,Rahul,,,,Dr. Reddy,,-12,Insulin
+79,Asha,4921459924,,3,Dr. Kumar,-4,-23,Paracetamol
+,,-940,97,,,-35,,Insulin
+90,Ravi,,-6,,Dr. Iyer,106,-20,Insulin
+9,Asha,,-1,3,,-44,143,
+9,Pooja,-264,,5,Dr. Sharma,-49,-1,Aspirin
+-8,Rahul,6311570171,-20,2,,,154,

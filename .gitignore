@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Database
+health.db
+
+# Reports
+health_report_*.pdf
+test_report_*.pdf
+cleaned_patient_records.csv
+
+# IDE
+.vscode/
+.idea/
