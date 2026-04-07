@@ -2,19 +2,74 @@ from fastapi import FastAPI, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from . import database, models, schemas, crud
 from .recommendation import get_recommendation
+from .analytics import calculate_health_risk, get_risk_recommendation
 from fpdf import FPDF
 import io
 
+# Initialize Database
 models.Base.metadata.create_all(bind=database.engine)
 
+# Initialize App
 app = FastAPI()
 
+# DB Dependency
 def get_db():
     db = database.SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+# --- New v2.0 Endpoints ---
+
+@app.get("/health/risk/{patient_id}")
+def get_risk_analysis(patient_id: int, db: Session = Depends(get_db)):
+    patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+    records = crud.get_records(db, patient_id)
+    if not records:
+        return {"risk": "Unknown", "recommendations": ["No data detected"]}
+    
+    latest = records[-1]
+    risk = calculate_health_risk(latest.bp, latest.sugar, patient.age)
+    recs = get_risk_recommendation(risk)
+    return {"risk": risk, "recommendations": recs}
+
+@app.post("/appointments/", response_model=schemas.AppointmentResponse)
+def create_appointment(appt: schemas.AppointmentCreate, db: Session = Depends(get_db)):
+    return crud.create_appointment(db, appt)
+
+@app.get("/appointments/patient/{patient_id}", response_model=list[schemas.AppointmentResponse])
+def get_patient_appointments(patient_id: int, db: Session = Depends(get_db)):
+    return crud.get_appointments_by_patient(db, patient_id)
+
+@app.get("/appointments/doctor/{doctor_id}", response_model=list[schemas.AppointmentResponse])
+def get_doctor_appointments(doctor_id: int, db: Session = Depends(get_db)):
+    return crud.get_appointments_by_doctor(db, doctor_id)
+
+@app.post("/medications/", response_model=schemas.MedicationResponse)
+def create_medication(med: schemas.MedicationCreate, db: Session = Depends(get_db)):
+    return crud.create_medication(db, med)
+
+@app.get("/medications/patient/{patient_id}", response_model=list[schemas.MedicationResponse])
+def get_patient_medications(patient_id: int, db: Session = Depends(get_db)):
+    return crud.get_medications_by_patient(db, patient_id)
+
+@app.patch("/medications/{med_id}")
+def toggle_medication(med_id: int, is_taken: int, db: Session = Depends(get_db)):
+    return crud.update_medication_status(db, med_id, is_taken)
+
+@app.get("/admin/stats")
+def get_admin_stats(db: Session = Depends(get_db)):
+    total_patients = db.query(models.Patient).count()
+    total_records = db.query(models.HealthRecord).count()
+    total_appointments = db.query(models.Appointment).count()
+    return {
+        "total_patients": total_patients,
+        "total_records": total_records,
+        "total_appointments": total_appointments
+    }
+
+# --- Core Authentication & Patient Endpoints ---
 
 @app.post("/register/", response_model=schemas.UserResponse)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -77,60 +132,58 @@ def recommend(patient_id: int, db: Session = Depends(get_db)):
 
 @app.get("/patients/{patient_id}/report")
 def generate_report(patient_id: int, db: Session = Depends(get_db)):
-    patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
-    
-    records = crud.get_records(db, patient_id)
-    
-    # Simple cleaner for strings (FPDF default fonts only support Latin-1)
-    def clean(text):
-        if text is None: return ""
-        return str(text).encode("latin-1", "replace").decode("latin-1")
+    try:
+        patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        
+        records = crud.get_records(db, patient_id)
+        
+        def clean(text):
+            if text is None: return ""
+            return str(text).encode("latin-1", "replace").decode("latin-1")
 
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # Title
-    pdf.set_font("Helvetica", 'B', 16)
-    pdf.cell(0, 10, txt=clean("Medical Health Report"), ln=1, align='C')
-    pdf.ln(10)
-    
-    # Patient Info
-    pdf.set_font("Helvetica", size=12)
-    pdf.cell(0, 10, txt=clean(f"Patient Name: {patient.name}"), ln=1)
-    pdf.cell(0, 10, txt=clean(f"Age: {patient.age}"), ln=1)
-    pdf.ln(5)
-    
-    # Table Header
-    pdf.set_font("Helvetica", 'B', 12)
-    pdf.cell(60, 10, clean("Record Details"), border=1)
-    pdf.cell(60, 10, clean("BP Status"), border=1)
-    pdf.cell(60, 10, clean("Sugar Level"), border=1)
-    pdf.ln()
-    
-    # Table Content
-    pdf.set_font("Helvetica", size=11)
-    for i, r in enumerate(records):
-        pdf.cell(60, 10, clean(f"Record {i+1}"), border=1)
-        pdf.cell(60, 10, clean(str(r.bp)), border=1)
-        pdf.cell(60, 10, clean(str(r.sugar)), border=1)
-        pdf.ln()
-    
-    # Recommendations
-    if records:
-        latest = records[-1]
-        rec = get_recommendation(latest.bp, latest.sugar)
+        pdf = FPDF()
+        pdf.add_page()
+        
+        pdf.set_font("Helvetica", 'B', 16)
+        pdf.cell(0, 10, txt=clean("Medical Health Report"), ln=1, align='C')
         pdf.ln(10)
+        
+        pdf.set_font("Helvetica", size=12)
+        pdf.cell(0, 10, txt=clean(f"Patient Name: {patient.name}"), ln=1)
+        pdf.cell(0, 10, txt=clean(f"Age: {patient.age}"), ln=1)
+        pdf.ln(5)
+        
         pdf.set_font("Helvetica", 'B', 12)
-        pdf.cell(0, 10, txt=clean("Latest Medical Recommendations:"), ln=1)
+        pdf.cell(60, 10, clean("Record Details"), border=1)
+        pdf.cell(60, 10, clean("BP Status"), border=1)
+        pdf.cell(60, 10, clean("Sugar Level"), border=1)
+        pdf.ln()
+        
         pdf.set_font("Helvetica", size=11)
-        for line in rec:
-            pdf.multi_cell(0, 10, txt=clean(f"- {line}"))
+        for i, r in enumerate(records):
+            pdf.cell(60, 10, clean(f"Record {i+1}"), border=1)
+            pdf.cell(60, 10, clean(str(r.bp)), border=1)
+            pdf.cell(60, 10, clean(str(r.sugar)), border=1)
+            pdf.ln()
+        
+        if records:
+            latest = records[-1]
+            rec = get_recommendation(latest.bp, latest.sugar)
+            pdf.ln(10)
+            pdf.set_font("Helvetica", 'B', 12)
+            pdf.cell(0, 10, txt=clean("Latest Medical Recommendations:"), ln=1)
+            pdf.set_font("Helvetica", size=11)
+            for line in rec:
+                pdf.multi_cell(190, 10, txt=clean(f"- {line}"))
 
-    # Return as response
-    return Response(
-        content=bytes(pdf.output()),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=report_{patient_id}.pdf"}
-    )
+        return Response(
+            content=bytes(pdf.output()),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=report_{patient_id}.pdf"}
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

@@ -45,3 +45,33 @@ class HealthResponse(HealthBase):
     patient_id: int
     class Config:
         from_attributes = True
+
+class AppointmentBase(BaseModel):
+    patient_id: int
+    doctor_id: int
+    date: str
+    time: str
+    status: Optional[str] = "Pending"
+
+class AppointmentCreate(AppointmentBase):
+    pass
+
+class AppointmentResponse(AppointmentBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+class MedicationBase(BaseModel):
+    patient_id: int
+    drug_name: str
+    dosage: str
+    time: str
+    is_taken: Optional[int] = 0
+
+class MedicationCreate(MedicationBase):
+    pass
+
+class MedicationResponse(MedicationBase):
+    id: int
+    class Config:
+        from_attributes = True

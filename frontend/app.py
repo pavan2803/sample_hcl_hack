@@ -38,33 +38,18 @@ else:
         if st.sidebar.button("Login"):
             login_user(username, password)
     else:
-        reg_user = st.sidebar.text_input("New Username")
-        reg_pass = st.sidebar.text_input("New Password", type="password")
-        role = st.sidebar.selectbox("Role", ["patient", "doctor"])
+        st.sidebar.subheader("Doctor Registration")
+        reg_user = st.sidebar.text_input("Username")
+        reg_pass = st.sidebar.text_input("Password", type="password")
         
-        # If registering as patient, we need patient details
-        p_name = ""
-        p_age = 0
-        if role == "patient":
-            p_name = st.sidebar.text_input("Full Name")
-            p_age = st.sidebar.number_input("Age", min_value=1, max_value=120)
-
-        if st.sidebar.button("Register"):
+        if st.sidebar.button("Register as Doctor"):
             res = requests.post(f"{API}/register/", json={
                 "username": reg_user,
                 "password": reg_pass,
-                "role": role
+                "role": "doctor"
             })
             if res.status_code == 200:
-                user_data = res.json()
-                if role == "patient":
-                    # Link user to patient
-                    requests.post(f"{API}/patients/", json={
-                        "name": p_name,
-                        "age": p_age,
-                        "user_id": user_data["id"]
-                    })
-                st.sidebar.success("Account created! Please login.")
+                st.sidebar.success("Doctor account created! Please login.")
             else:
                 st.sidebar.error("Registration failed or username exists.")
 
@@ -90,95 +75,153 @@ else:
     
     if user["role"] == "doctor":
         st.title("🩺 Doctor Dashboard")
-        
-        menu = ["Patient Monitoring", "Add Health Records"]
-        tab1, tab2 = st.tabs(menu)
+        menu = ["Monitoring", "New Patient", "Appointments", "Prescribe"]
+        tab1, tab2, tab3, tab4 = st.tabs(menu)
         
         with tab1:
-            st.header("Active Patient Monitoring")
+            st.header("📋 Patient Analytics")
             res = requests.get(f"{API}/doctor/patients/")
             if res.status_code == 200:
                 data = res.json()
                 if data:
                     df = pd.DataFrame(data)
-                    # Color background based on status
-                    def color_status(val):
-                        color = 'red' if val == "Check" else 'green'
-                        return f'background-color: {color}'
+                    st.dataframe(df, use_container_width=True)
                     
-                    st.dataframe(df.style.applymap(color_status, subset=['status']), use_container_width=True)
-                    
-                    # Selection for detailed view
-                    selected_patient = st.selectbox("Select Patient for detailed report", df['name'].tolist())
-                    patient_id = df[df['name'] == selected_patient]['id'].iloc[0]
-                    
-                    if st.button("Generate Detailed Recommendation"):
-                        rec_res = requests.get(f"{API}/health/recommend/{patient_id}")
-                        if rec_res.status_code == 200:
-                            st.json(rec_res.json())
+                    pid = st.selectbox("Select Patient for deep analysis", df['id'].tolist())
+                    if st.button("Generate AI Risk Scan"):
+                        risk_res = requests.get(f"{API}/health/risk/{pid}")
+                        if risk_res.status_code == 200:
+                            risk_data = risk_res.json()
+                            st.metric("AI Risk Status", risk_data['risk'])
+                            for r in risk_data['recommendations']:
+                                st.warning(r)
                 else:
-                    st.write("No patients registered yet.")
+                    st.write("No patients registered.")
         
         with tab2:
-            st.header("Add Patient Health Data")
-            # Get list of patients for selection
+            st.header("📝 Register New Patient")
+            with st.form("new_patient_form"):
+                new_p_name = st.text_input("Full Name")
+                new_p_age = st.number_input("Age", 1, 120, 30)
+                new_p_phone = st.text_input("Phone Number")
+                st.divider()
+                st.subheader("Patient Login Credentials")
+                new_p_user = st.text_input("Username")
+                new_p_pass = st.text_input("Password", type="password")
+                
+                if st.form_submit_button("Register Patient & Create Account"):
+                    if new_p_name and new_p_phone and new_p_user and new_p_pass:
+                        u_res = requests.post(f"{API}/register/", json={"username": new_p_user, "password": new_p_pass, "role": "patient"})
+                        if u_res.status_code == 200:
+                            uid = u_res.json()["id"]
+                            requests.post(f"{API}/patients/", json={"name": new_p_name, "age": new_p_age, "phone_number": new_p_phone, "user_id": uid})
+                            st.success(f"Patient {new_p_name} registered successfully!")
+                            st.rerun()
+
+        with tab3:
+            st.header("📅 Appointments Center")
+            appt_res = requests.get(f"{API}/appointments/doctor/{user['id']}")
+            if appt_res.status_code == 200:
+                appts = appt_res.json()
+                if appts:
+                    st.table(pd.DataFrame(appts))
+                else:
+                    st.info("No appointments scheduled for your profile.")
+
+        with tab4:
+            st.header("💊 Prescription Management")
             res = requests.get(f"{API}/doctor/patients/")
             if res.status_code == 200:
                 patients = res.json()
                 p_names = {p["id"]: p["name"] for p in patients}
-                if p_names:
-                    pid = st.selectbox("Select Patient", options=list(p_names.keys()), format_func=lambda x: p_names[x])
-                    bp = st.number_input("Blood Pressure (systolic)", min_value=50, max_value=250, value=120)
-                    sugar = st.number_input("Sugar Level", min_value=50, max_value=500, value=100)
-                    
-                    if st.button("Submit Data"):
-                        res = requests.post(f"{API}/health/", json={
-                            "patient_id": pid,
-                            "bp": bp,
-                            "sugar": sugar
-                        })
-                        if res.status_code == 200:
-                            st.success("Health record added!")
-                            st.rerun()
-                else:
-                    st.warning("No patients found to add data for.")
+                with st.form("prescribe_form"):
+                    pid = st.selectbox("Patient", options=list(p_names.keys()), format_func=lambda x: p_names[x])
+                    med_name = st.text_input("Medication Name")
+                    dosage = st.text_input("Dosage")
+                    timing = st.selectbox("Timing", ["Morning", "Afternoon", "Evening", "Night"])
+                    if st.form_submit_button("Add Medication"):
+                        requests.post(f"{API}/medications/", json={"patient_id": pid, "drug_name": med_name, "dosage": dosage, "time": timing})
+                        st.success("Prescription added!")
 
     elif user["role"] == "patient":
-        st.title("👤 Patient Portal")
-        
+        st.title("👤 Patient Health Portal")
         if not user["patient_id"]:
-            st.warning("No patient record linked to this account. Please contact your doctor.")
+            st.warning("No patient record linked to this account.")
         else:
             pid = user["patient_id"]
+            risk_res = requests.get(f"{API}/health/risk/{pid}")
+            if risk_res.status_code == 200:
+                risk_data = risk_res.json()
+                if risk_data["risk"] == "Critical":
+                    st.error("🚨 **CRITICAL ALERT**: Emergency consultation required!")
+                elif risk_data["risk"] == "High Risk":
+                    st.warning("⚠️ **HIGH RISK**: Consult your doctor soon.")
+
+            st.divider()
+            menu = ["My Trends", "Medication Tracker", "Doctor Recommendations", "Reports"]
+            t1, t2, t3, t4 = st.tabs(menu)
             
-            col1, col2 = st.columns([2, 1])
-            
-            with col1:
-                st.header("My Health Records")
+            with t1:
+                st.header("📈 Health Statistics")
                 rec_res = requests.get(f"{API}/health/recommend/{pid}")
                 if rec_res.status_code == 200:
                     health_status = rec_res.json()
-                    st.metric("Latest BP", health_status.get("bp", "N/A"))
-                    st.metric("Latest Sugar", health_status.get("sugar", "N/A"))
-                    
-                    st.subheader("Doctor Recommendation")
-                    for r in health_status.get("recommendation", ["No recommendations yet"]):
-                        st.info(r)
-                else:
-                    st.write("No health records found yet.")
-            
-            with col2:
-                st.header("Actions")
-                report_url = f"{API}/patients/{pid}/report"
+                    c1, c2 = st.columns(2)
+                    c1.metric("Current BP", health_status.get("bp", "N/A"))
+                    c2.metric("Current Sugar", health_status.get("sugar", "N/A"))
+                    chart_data = pd.DataFrame({"Metric": ["Target", "Current"], "Value": [120, health_status.get("bp", 120)]}).set_index("Metric")
+                    st.line_chart(chart_data)
+
+            with t2:
+                st.header("💊 Daily Medication Tracker")
+                med_res = requests.get(f"{API}/medications/patient/{pid}")
+                if med_res.status_code == 200:
+                    meds = med_res.json()
+                    for m in meds:
+                        taken = st.checkbox(f"{m['drug_name']} ({m['dosage']})", value=bool(m['is_taken']), key=f"med_{m['id']}")
+                        if taken != bool(m['is_taken']):
+                            requests.patch(f"{API}/medications/{m['id']}", params={"is_taken": int(taken)})
+
+            with t3:
+                st.header("🩺 Doctor's Note")
+                if risk_res.status_code == 200:
+                    st.subheader(f"Risk Rating: {risk_data['risk']}")
+                    for rec in risk_data['recommendations']:
+                        st.success(f"• {rec}")
+
+            with t4:
+                st.header("📄 Download Center")
                 
-                if st.button("Generate & Download PDF Report"):
-                    res = requests.get(report_url)
-                    if res.status_code == 200:
-                        st.download_button(
-                            label="Click here to download",
-                            data=res.content,
-                            file_name=f"health_report_{pid}.pdf",
-                            mime="application/pdf"
-                        )
-                    else:
-                        st.error("Failed to generate report.")
+                # Use session state to keep the download button visible after generation
+                if "pdf_report" not in st.session_state:
+                    st.session_state.pdf_report = None
+                
+                if st.button("Generate Medical PDF"):
+                    with st.spinner("Generating Report..."):
+                        report_res = requests.get(f"{API}/patients/{pid}/report")
+                        if report_res.status_code == 200:
+                            st.session_state.pdf_report = report_res.content
+                            st.success("Report Generated!")
+                        else:
+                            st.error(f"Failed to fetch report: {report_res.status_code} - {report_res.text}")
+
+                if st.session_state.pdf_report:
+                    st.download_button(
+                        label="📥 Click here to Download PDF",
+                        data=st.session_state.pdf_report,
+                        file_name=f"health_report_{pid}.pdf",
+                        mime="application/pdf",
+                        key="download_btn_final"
+                    )
+
+    elif user["role"] == "admin":
+        st.title("🛡️ Hospital Administration")
+        stats_res = requests.get(f"{API}/admin/stats")
+        if stats_res.status_code == 200:
+            stats = stats_res.json()
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Patients", stats["total_patients"])
+            col2.metric("Total Records", stats["total_records"])
+            col3.metric("Appointments", stats["total_appointments"])
+            st.divider()
+            st.success("✅ System Status: ALL SYSTEMS OPERATIONAL")

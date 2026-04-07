@@ -11,6 +11,9 @@ health.db
 # Reports
 health_report_*.pdf
 test_report_*.pdf
+final_verified_report.pdf
+space_fix_report.pdf
+debug_report.pdf
 cleaned_patient_records.csv
 
 # IDE

@@ -52,3 +52,35 @@ def get_patient_by_user_id(db: Session, user_id: int):
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
+# --- New v2.0 CRUD ---
+
+def create_appointment(db: Session, appt: schemas.AppointmentCreate):
+    db_appt = models.Appointment(**appt.dict())
+    db.add(db_appt)
+    db.commit()
+    db.refresh(db_appt)
+    return db_appt
+
+def get_appointments_by_patient(db: Session, patient_id: int):
+    return db.query(models.Appointment).filter(models.Appointment.patient_id == patient_id).all()
+
+def get_appointments_by_doctor(db: Session, doctor_id: int):
+    return db.query(models.Appointment).filter(models.Appointment.doctor_id == doctor_id).all()
+
+def create_medication(db: Session, med: schemas.MedicationCreate):
+    db_med = models.Medication(**med.dict())
+    db.add(db_med)
+    db.commit()
+    db.refresh(db_med)
+    return db_med
+
+def get_medications_by_patient(db: Session, patient_id: int):
+    return db.query(models.Medication).filter(models.Medication.patient_id == patient_id).all()
+
+def update_medication_status(db: Session, med_id: int, is_taken: int):
+    db_med = db.query(models.Medication).filter(models.Medication.id == med_id).first()
+    if db_med:
+        db_med.is_taken = is_taken
+        db.commit()
+    return db_med
